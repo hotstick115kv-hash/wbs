@@ -93,10 +93,10 @@ try{API=localStorage.getItem('api')||''}catch(e){}
 $('#api').value=API;$('#mode').textContent=API?'เชื่อมต่อฐานข้อมูล Google Sheets':'โหมดทดลอง: ข้อมูลเก็บในเครื่องนี้เท่านั้น';
 function saveApi(){API=$('#api').value.trim();try{localStorage.setItem('api',API)}catch(e){}$('#mode').textContent=API?'เชื่อมต่อฐานข้อมูล Google Sheets':'โหมดทดลอง: ข้อมูลเก็บในเครื่องนี้เท่านั้น'}
 /* ---- โหมดทดลอง (จำลองฝั่งเซิร์ฟเวอร์ในเครื่อง) ---- */
-const SEED=[["7001264054","0020","ค่าแรง","57184.90"],["7001264054","0030","ค่าควบคุมงาน","17155.70"],["7001264054","0050","ค่าเบ็ดเตล็ด","17724.95"],["7001264054","0060","ค่าดำเนินการ","16184.00"],["7001264056","0030","ค่าแรง","32883.10"],["7001264056","0040","ค่าควบคุมงาน","9864.70"],["7001264056","0060","ค่าเบ็ดเตล็ด","9585.25"],["7001264056","0070","ค่าดำเนินการ","8461.00"],["7001264057","0020","ค่าแรง","16181.65"],["7001264057","0030","ค่าควบคุมงาน","4854.15"],["7001264057","0050","ค่าเบ็ดเตล็ด","5663.75"],["7001264057","0060","ค่าดำเนินการ","1222.00"],["7001264060","0030","ค่าแรง","5677.55"],["7001264060","0040","ค่าควบคุมงาน","1703.15"],["7001264060","0060","ค่าเบ็ดเตล็ด","7297.90"],["7001264060","0070","ค่าดำเนินการ","6664.00"]],NN={'7001264054':'33 kV - แผนกแรงสูง','7001264056':'33 kV - แผนกแรงต่ำ','7001264057':'33 kV - แผนกรื้อถอนแรงต่ำ','7001264060':'33 kV - แผนกหม้อแปลง'},SUP='นายศุภชัย จันทร์ครุฑ';
+const SEED=[["7001264054","0020","ค่าแรง","57184.90"],["7001264054","0030","ค่าควบคุมงาน","17155.70"],["7001264054","0040","ค่าขนส่ง","13341.15"],["7001264054","0050","ค่าเบ็ดเตล็ด","17724.95"],["7001264056","0030","ค่าแรง","32883.10"],["7001264056","0040","ค่าควบคุมงาน","9864.70"],["7001264056","0050","ค่าขนส่ง","6774.65"],["7001264056","0060","ค่าเบ็ดเตล็ด","9585.25"],["7001264057","0020","ค่าแรง","16181.65"],["7001264057","0030","ค่าควบคุมงาน","4854.15"],["7001264057","0040","ค่าขนส่ง","1415.65"],["7001264057","0050","ค่าเบ็ดเตล็ด","5663.75"],["7001264060","0030","ค่าแรง","5677.55"],["7001264060","0040","ค่าควบคุมงาน","1703.15"],["7001264060","0050","ค่าขนส่ง","6599.85"],["7001264060","0060","ค่าเบ็ดเตล็ด","7297.90"]],NN={'7001264054':'33 kV - แผนกแรงสูง','7001264056':'33 kV - แผนกแรงต่ำ','7001264057':'33 kV - แผนกรื้อถอนแรงต่ำ','7001264060':'33 kV - แผนกหม้อแปลง'},SUP='นายศุภชัย จันทร์ครุฑ';
 function db(){if(mem)return mem;try{mem=JSON.parse(localStorage.getItem('bm_demo2'))}catch(e){}
  if(!mem){const W='I-69-K-PUPOM.JL.1029';mem={users:[{id:'489961',empId:'489961',name:'ผู้ดูแลระบบ',role:'admin',pin:'8333',active:'1'}],logs:[],records:[],
-  wbs:SEED.map(([n,a,nm,b])=>({id:W+'|'+n+'|'+a,wbs:W,jobName:'PEA-56-001351 HTL ซอยราชพ์รู้เจริญ ม.2 ต.ค',network:n,networkName:NN[n],activity:a,activityName:nm,budget:b,costElement:(n=='7001264054'&&a=='0020')?'53010060':''}))}}return mem}
+  wbs:SEED.map(([n,a,nm,b])=>({id:W+'|'+n+'|'+a,wbs:W,jobName:'PEA-56-001351 HTL ซอยราชพ์รู้เจริญ ม.2 ต.ค',network:n,networkName:NN[n],activity:a,activityName:nm,plan:b,deductPct:'15',base:(Math.round(+b*85+1e-6)/100).toFixed(2),approvalPct:'100',manual:'0',budget:(Math.round(+b*85+1e-6)/100).toFixed(2),costElement:(n=='7001264054'&&a=='0020')?'53010060':''}))}}return mem}
 const keep=()=>{try{localStorage.setItem('bm_demo2',JSON.stringify(mem))}catch(e){}};
 function local(a,au,x){const d=db(),u=d.users.find(u=>u.empId===au.id&&u.active!=='0'),ok=u&&(u.role!=='admin'||u.pin===au.pin);
  const L=(act,tg,dt)=>{d.logs.unshift({ts:new Date().toISOString(),empId:au.id,name:u?u.name:'',action:act,target:tg||'',detail:String(dt||'').slice(0,1500)});d.logs.length=Math.min(d.logs.length,2000)};
@@ -104,6 +104,7 @@ function local(a,au,x){const d=db(),u=d.users.find(u=>u.empId===au.id&&u.active!
  const adm=u.role==='admin',me={empId:u.empId,name:u.name,role:u.role},sh=x.sheet,t=d[sh];
  if(a==='login'){L('login');keep();return{me}}
  if(a==='log'){L(x.act,x.target);keep();return{me}}
+ if(a==='editBudget'){const o=d.wbs.find(q=>q.id===x.id);if(!o)throw new Error('ไม่พบกิจกรรม');const b={plan:o.plan,deductPct:o.deductPct,base:o.base,approvalPct:o.approvalPct,budget:o.budget};['plan','deductPct','base','approvalPct','budget','manual'].forEach(k=>{if(x.row[k]!==undefined)o[k]=String(x.row[k])});L('edit_budget','wbs:'+x.id,JSON.stringify({before:b,after:x.row}));keep();return{me}}
  if(a==='list'){let rows=t;if(sh==='users'){if(!adm)throw new Error('ไม่มีสิทธิ์');rows=t.map(({pin,...r})=>r)}if(sh==='logs'&&!adm)throw new Error('ไม่มีสิทธิ์');
   if(sh==='wbs')rows=t.map(w=>({...w,used:d.records.filter(r=>r.wbs===w.wbs&&r.network===w.network&&r.activity===w.activity).reduce((s,r)=>s+num(r.total),0)}));
   return{me,rows:sh==='logs'?t.slice(0,300):rows}}
@@ -168,25 +169,25 @@ async function dl(i){const r=S.recs[i];try{const z=await JSZip.loadAsync(TPL,{ba
 async function rm(sh,id){if(!confirm('ยืนยันการลบ?'))return;try{await call('del',{sheet:sh,id});await load();go(S.tab)}catch(e){alert(e.message)}}
 /* ---- ผู้ดูแล: หมายเลขงาน / ผู้ใช้ ---- */
 const bar=(u,b)=>{const p=b>0?u/b*100:0;return`<div class="bar"><i style="width:${Math.min(100,p)}%;${p>100?'background:#b00020':''}"></i></div>`};
-const sm=(b,u)=>`<div class="sm"><span>งบ<b>${fm(b)}</b></span><span>ใช้ไป<b>${fm(u)}</b></span><span>คงเหลือ<b class="${b-u<0?'err':''}">${fm(b-u)}</b></span></div>`;
-const sumOf=R=>[R.reduce((s,r)=>s+num(r.budget),0),R.reduce((s,r)=>s+num(r.used),0)];
-function vWbs(){const adm=S.user.role==='admin',F=[['wbs','WBS'],['jobName','ชื่องาน'],['network','เลขโครงข่าย'],['networkName','ชื่อโครงข่าย'],['activity','เลขกิจกรรม'],['activityName','ชื่อกิจกรรม'],['budget','งบ (บาท)'],['costElement','ส่วนประกอบต้นทุน']];
- const adminCards=adm?`<div class="card"><b>นำเข้าข้อมูลหมายเลขงาน</b><div class="mut">รองรับรายงาน SAP (.txt), CSV/TSV, Excel (.xlsx/.xls) · ไฟล์ละหลาย WBS ได้ · เฉพาะค่าแรง ค่าควบคุมงาน ค่าเบ็ดเตล็ด ค่าดำเนินการ (งบ = คอลัมน์แผน) · WBS อื่นไม่ถูกแตะต้อง</div><input type="file" id="impf" accept=".txt,.csv,.tsv,.xlsx,.xls,.xlsm" onchange="pick(this)" style="margin-top:6px"><div id="imp"></div></div>
+const sm=(b,u,bs0)=>`<div class="sm">${bs0!==undefined&&Math.abs(bs0-b)>0.005?`<span>งบประมาณ 100%<b>${fm(bs0)}</b></span>`:''}<span>งบที่อนุมัติ<b>${fm(b)}</b></span><span>ใช้ไป<b>${fm(u)}</b></span><span>คงเหลือ<b class="${b-u<0?'err':''}">${fm(b-u)}</b></span></div>`;
+const sumOf=R=>[R.reduce((s,r)=>s+num(r.budget),0),R.reduce((s,r)=>s+num(r.used),0),R.reduce((s,r)=>s+num(r.base||r.budget),0)];
+function vWbs(){const adm=S.user.role==='admin',F=[['wbs','WBS'],['jobName','ชื่องาน'],['network','เลขโครงข่าย'],['networkName','ชื่อโครงข่าย'],['activity','เลขกิจกรรม'],['activityName','ชื่อกิจกรรม'],['plan','แผน SAP (บาท)'],['base','งบประมาณ 100% (บาท)'],['approvalPct','% อนุมัติ'],['budget','งบที่อนุมัติ (บาท)'],['costElement','ส่วนประกอบต้นทุน']];
+ const adminCards=adm?`<div class="card"><b>นำเข้าข้อมูลหมายเลขงาน</b><div class="mut">รองรับรายงาน SAP (.txt), CSV/TSV, Excel (.xlsx/.xls) · ไฟล์ละหลาย WBS ได้ · เฉพาะค่าแรง ค่าควบคุมงาน ค่าขนส่ง ค่าเบ็ดเตล็ด (ใช้คอลัมน์แผน) · WBS อื่นไม่ถูกแตะต้อง</div><label style="margin-top:8px">% ที่อนุมัติ (เช่น 80)</label><input id="i_ap" inputmode="decimal" value="100" oninput="impCalc()" style="max-width:200px"><div class="mut">งบที่อนุมัติ = งบประมาณ 100% × % ที่อนุมัติ · ปรับได้ก่อนกดยืนยัน</div><input type="file" id="impf" accept=".txt,.csv,.tsv,.xlsx,.xls,.xlsm" onchange="pick(this)" style="margin-top:6px"><div id="imp"></div></div>
  <details class="card"><summary><b>เพิ่ม / แก้ไขหมายเลขงานทีละรายการ</b></summary><div class="g">${F.map(([k,n])=>`<div><label>${n}</label><input id="w_${k}"></div>`).join('')}</div><p class="err" id="werr"></p><button class="b" onclick="saveW()">บันทึก</button></details>`:'';
- const [B,U]=sumOf(S.wbs);
- $('#main').innerHTML=adminCards+`<div class="card"><b>สรุปรวมทุกหมายเลขงาน</b> <span class="mut">${uniq(S.wbs.map(r=>r.wbs)).length} หมายเลขงาน · ${uniq(S.wbs.map(r=>r.network)).length} โครงข่าย</span>${sm(B,U)}${bar(U,B)}</div>
+ const [B,U,BS]=sumOf(S.wbs);
+ $('#main').innerHTML=adminCards+`<div class="card"><b>สรุปรวมทุกหมายเลขงาน</b> <span class="mut">${uniq(S.wbs.map(r=>r.wbs)).length} หมายเลขงาน · ${uniq(S.wbs.map(r=>r.network)).length} โครงข่าย</span>${sm(B,U,BS)}${bar(U,B)}</div>
  <input id="q" placeholder="ค้นหา WBS / โครงข่าย / ชื่องาน / กิจกรรม" value="${h(S.q||'')}" oninput="S.q=this.value;drawWbs()" style="margin-bottom:8px"><div style="display:flex;gap:8px"><button class="s" onclick="fold(1)">เปิดทั้งหมด</button><button class="s" onclick="fold(0)">ปิดทั้งหมด</button></div><div id="wl"></div>`;drawWbs()}
 const FI=c=>`<svg class="ic ${c}" viewBox="0 0 24 24"><g class="fc"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></g><g class="fo"><path class="bk" d="M3 7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v1H3z"/><path d="M1.5 10h21l-2.3 8.2a2 2 0 0 1-1.9 1.4H5.7a2 2 0 0 1-1.9-1.4z"/></g></svg>`,
  DI='<svg class="di" viewBox="0 0 24 24"><path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="none" stroke="#5a2a82" stroke-width="1.6"/><path d="M14 2v5h5M8 12h8M8 16h6" fill="none" stroke="#5a2a82" stroke-width="1.6"/></svg>';
 function fold(o){document.querySelectorAll('#wl details').forEach(d=>{d.open=!!o})}
 function drawWbs(){const adm=S.user.role==='admin',q=(S.q||'').trim().toLowerCase(),hit=r=>!q||(r.wbs+r.jobName+r.network+r.networkName+r.activityName).toLowerCase().includes(q);
  const W=uniq(S.wbs.filter(hit).map(r=>r.wbs)),op=k=>S.open[k]?'open':'',tg=k=>`ontoggle="S.open['${h(k)}']=this.open"`,cnt=(w,n,a)=>S.recs.filter(x=>x.wbs===w&&(!n||x.network===n)&&(!a||x.activity===a)).length;
- $('#wl').innerHTML=W.map(w=>{const all=S.wbs.map((r,i)=>({...r,i})).filter(r=>r.wbs===w),[b,u]=sumOf(all),N=uniq(all.map(r=>r.network));
-  return`<details class="fd" ${W.length===1||q?'open':op('w:'+w)} ${tg('w:'+w)}><summary class="fh">${FI('')}<div class="fb"><b>${h(w)}</b> <span class="mut">${h(all[0].jobName)}</span><div class="cnt">${N.length} โครงข่าย · ${cnt(w)} รายการเบิก</div>${sm(b,u)}${bar(u,b)}${adm?`<button class="s r" style="margin-top:6px" onclick="event.preventDefault();rmW('${h(w)}')">ลบ WBS นี้</button>`:''}</div></summary>
-  ${N.map(n=>{const R=all.filter(r=>r.network===n),[nb,nu]=sumOf(R);return`<details class="fd sub" ${q?'open':op('n:'+w+n)} ${tg('n:'+w+n)}><summary class="fh">${FI('s')}<div class="fb"><b>โครงข่าย ${h(n)}</b> <span class="mut">${h(R[0].networkName)}</span><div class="cnt">${R.length} กิจกรรม · ${cnt(w,n)} รายการเบิก</div>${sm(nb,nu)}${bar(nu,nb)}</div></summary>
+ $('#wl').innerHTML=W.map(w=>{const all=S.wbs.map((r,i)=>({...r,i})).filter(r=>r.wbs===w),[b,u,bb]=sumOf(all),N=uniq(all.map(r=>r.network));
+  return`<details class="fd" ${W.length===1||q?'open':op('w:'+w)} ${tg('w:'+w)}><summary class="fh">${FI('')}<div class="fb"><b>${h(w)}</b> <span class="mut">${h(all[0].jobName)}</span><div class="cnt">${N.length} โครงข่าย · ${cnt(w)} รายการเบิก</div>${sm(b,u,bb)}${bar(u,b)}${adm?`<button class="s r" style="margin-top:6px" onclick="event.preventDefault();rmW('${h(w)}')">ลบ WBS นี้</button>`:''}</div></summary>
+  ${N.map(n=>{const R=all.filter(r=>r.network===n),[nb,nu,nbb]=sumOf(R);return`<details class="fd sub" ${q?'open':op('n:'+w+n)} ${tg('n:'+w+n)}><summary class="fh">${FI('s')}<div class="fb"><b>โครงข่าย ${h(n)}</b> <span class="mut">${h(R[0].networkName)}</span><div class="cnt">${R.length} กิจกรรม · ${cnt(w,n)} รายการเบิก</div>${sm(nb,nu,nbb)}${bar(nu,nb)}</div></summary>
    ${R.map(r=>{const rc=S.recs.map((x,k)=>({x,k})).filter(o=>o.x.wbs===r.wbs&&o.x.network===r.network&&o.x.activity===r.activity),k='a:'+r.id;
     return`<details class="act" ${op(k)} ${tg(k)}><summary class="ar"><span>${h(r.activity)} ${h(r.activityName)}<br><span class="cnt">${rc.length?rc.length+' รายการเบิก ▾':'ยังไม่มีรายการ'}</span></span><span class="n">${r.budget?fm(r.budget):'-'}</span><span class="n">${fm(r.used)}</span><span class="n ${r.budget&&num(r.budget)-num(r.used)<0?'err':''}">${r.budget?fm(num(r.budget)-num(r.used)):'-'}</span></summary>
-    <div class="rl">${rc.map(({x,k})=>`<div class="rr"><span>${DI} ${h(MONTHS[x.month-1])} ${h(x.year)}<br><b>${h(x.payee)}</b> <span class="mut">โดย ${h(x.empId)}</span></span><span class="n">${fm(x.total)}</span><span class="n"><a onclick="dl(${k})">Word</a> · <a onclick="S.ed=S.recs[${k}];go('new')">แก้ไข</a> · <a class="err" onclick="rm('records','${h(x.id)}')">ลบ</a></span></div>`).join('')||'<div class="mut" style="padding:6px 8px">ยังไม่มีรายการเบิกในกิจกรรมนี้</div>'}
+    <div class="rl"><div class="mut" style="padding:6px 8px">${r.plan?`แผน SAP ${fm(r.plan)} → งบประมาณ 100% <b>${fm(r.base||r.budget)}</b> · อนุมัติ ${h(r.approvalPct||100)}% = <b>${fm(r.budget)}</b>${r.manual==='1'?' · <b>แก้ไขเอง</b>':''}<br>`:''}<a style="color:var(--p);cursor:pointer" onclick="eb('${h(r.id)}')">แก้ไขงบประมาณ</a></div>${rc.map(({x,k})=>`<div class="rr"><span>${DI} ${h(MONTHS[x.month-1])} ${h(x.year)}<br><b>${h(x.payee)}</b> <span class="mut">โดย ${h(x.empId)}</span></span><span class="n">${fm(x.total)}</span><span class="n"><a onclick="dl(${k})">Word</a> · <a onclick="S.ed=S.recs[${k}];go('new')">แก้ไข</a> · <a class="err" onclick="rm('records','${h(x.id)}')">ลบ</a></span></div>`).join('')||'<div class="mut" style="padding:6px 8px">ยังไม่มีรายการเบิกในกิจกรรมนี้</div>'}
     ${adm?`<div style="padding:6px 8px"><a onclick="fw(${r.i})">แก้ไขกิจกรรมนี้</a> · <a class="err" onclick="rm('wbs','${h(r.id)}')">ลบกิจกรรมนี้</a></div>`:''}</div></details>`}).join('')}</details>`}).join('')}</details>`}).join('')||'<div class="card mut">ไม่พบข้อมูล</div>'}
 /* ---- ส่งออก ---- */
 function exp(kind){if(!S.recs.length){alert('ยังไม่มีรายการให้ส่งออก');return}
@@ -194,7 +195,7 @@ function exp(kind){if(!S.recs.length){alert('ยังไม่มีราย�
  const A=S.recs.map(r=>{const w=m(r),o={'ปี พ.ศ.':r.year,'เดือน':MONTHS[r.month-1]||r.month,'งวดวันที่':r.d1,'ถึงวันที่':r.d2,'WBS':r.wbs,'ชื่องาน':r.jobName,'เลขโครงข่าย':r.network,'ชื่อโครงข่าย':w.networkName||'','เลขกิจกรรม':r.activity,'ชื่อกิจกรรม':w.activityName||'','ชื่อ-สกุล':r.payee,'อัตราค่าจ้าง':num(r.rate)||''};
   TY.forEach(([k,n])=>{o['ค่า'+n.replace(/^ค่า/,'')]=num(r[k])||'';o['รหัสบัญชี'+n.replace(/^ค่า/,'')]=r['c_'+k]||''});
   o['รวม']=num(r.total);o['รหัสบัญชีรวม']=r.c_total||'';o['ผู้ควบคุมงาน']=r.sup1||'';o['ผู้ควบคุมงบ']=r.sup2||'';o['บันทึกโดย']=r.empId;o['วันเวลาบันทึก']=r.ts?new Date(r.ts).toLocaleString('th-TH'):'';return o}),
- B=S.wbs.map(w=>({'WBS':w.wbs,'เลขโครงข่าย':w.network,'ชื่อโครงข่าย':w.networkName||'','เลขกิจกรรม':w.activity,'ชื่อกิจกรรม':w.activityName,'งบ':num(w.budget),'ใช้ไป':num(w.used),'คงเหลือ':num(w.budget)-num(w.used),'จำนวนรายการ':S.recs.filter(x=>x.wbs===w.wbs&&x.network===w.network&&x.activity===w.activity).length})),
+ B=S.wbs.map(w=>({'WBS':w.wbs,'เลขโครงข่าย':w.network,'ชื่อโครงข่าย':w.networkName||'','เลขกิจกรรม':w.activity,'ชื่อกิจกรรม':w.activityName,'แผน SAP':num(w.plan)||'','% อนุมัติ':w.approvalPct||'','% หัก':w.deductPct||'','งบประมาณ 100%':num(w.base||w.budget),'งบที่อนุมัติ':num(w.budget),'ใช้ไป':num(w.used),'คงเหลือ':num(w.budget)-num(w.used),'จำนวนรายการ':S.recs.filter(x=>x.wbs===w.wbs&&x.network===w.network&&x.activity===w.activity).length})),
  st=new Date().toISOString().slice(0,10);
  if(kind==='xlsx'){if(typeof XLSX==='undefined'){alert('โหลดไลบรารี Excel ไม่ได้ (ต้องเชื่อมต่ออินเทอร์เน็ต) — ใช้ปุ่ม CSV แทน');return}
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(A),'รายการเบิก');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(B),'สรุปโครงข่าย');XLSX.writeFile(wb,'ใบตัดงบ_'+st+'.xlsx')}
@@ -202,9 +203,9 @@ function exp(kind){if(!S.recs.length){alert('ยังไม่มีราย�
   a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='ใบตัดงบ_'+st+'.csv';document.body.appendChild(a);a.click();a.remove()}
  call('log',{act:'export',target:kind+' '+A.length+' รายการ'}).catch(()=>{})}
 async function rmW(w){if(!confirm('ลบหมายเลขงาน '+w+' ทั้งหมด? (ประวัติรายการเบิกไม่หาย)'))return;try{await call('prune',{sheet:'wbs',wbs:w,keep:[]});await load();vWbs()}catch(e){alert(e.message)}}
-const WK=['wbs','jobName','network','networkName','activity','activityName','budget','costElement'];
+const WK=['wbs','jobName','network','networkName','activity','activityName','plan','base','approvalPct','budget','costElement'];
 function fw(i){WK.forEach(k=>$('#w_'+k).value=S.wbs[i][k]||'');scrollTo(0,0)}
-async function saveW(){const r={};WK.forEach(k=>r[k]=$('#w_'+k).value.trim());r.budget=r.budget.replace(/,/g,'');
+async function saveW(){const r={};WK.forEach(k=>r[k]=$('#w_'+k).value.trim());r.budget=r.budget.replace(/,/g,'');r.plan=r.plan.replace(/,/g,'');r.deductPct=String(DED);r.base=r.base.replace(/,/g,'');r.manual=((r.base&&r.budget&&Math.abs(+r.budget-r2(+r.base*(num(r.approvalPct)||100)/100))>0.005)||(r.plan&&r.base&&Math.abs(+r.base-bs(r.plan,DED))>0.005))?'1':'0';
  if(!r.wbs||!/^\d{10}$/.test(r.network)||!/^\d{4}$/.test(r.activity)){$('#werr').textContent='ต้องมี WBS, เลขโครงข่าย 10 หลัก และเลขกิจกรรม 4 หลัก';return}
  r.id=r.wbs+'|'+r.network+'|'+r.activity;try{await call('save',{sheet:'wbs',row:r});await load();vWbs()}catch(e){$('#werr').textContent=e.message}}
 function vUsers(){$('#main').innerHTML=`<div class="card"><b>เพิ่ม / แก้ไขผู้ใช้งาน</b><div class="g"><div><label>รหัสพนักงาน</label><input id="u_id" inputmode="numeric"></div><div><label>ชื่อ – สกุล</label><input id="u_name"></div>
@@ -218,30 +219,47 @@ async function saveU(){const id=$('#u_id').value.trim(),r={id,empId:id,name:$('#
  try{await call('save',{sheet:'users',row:r});await load();vUsers()}catch(e){$('#uerr').textContent=e.message}}
 
 /* ---- นำเข้าไฟล์ ---- */
-const KEEP=/^(ค่าแรง|ค่าควบคุมงาน|ค่าเบ็ดเตล็ด|ค่าดำเนินการ)/;
+const KEEP=/^(ค่าแรง|ค่าควบคุมงาน|ค่าขนส่ง|ค่าเบ็ดเตล็ด)/,r2=v=>Math.round(v*100+1e-6)/100,DED=15;
 function parseImp(lines){let wbs='',job='',out=[],skip=0;
  for(const l of lines){const s=l.replace(/\s+/g,' '),n=s.match(/(70\d{8})[\s|]+(\d{4})[\s|]+([^|]*?)\s*\|\s*(-?[\d,]*\d(?:\.\d+)?)/);
   const wc=s.match(/\b([A-Z]-\d{2}-[A-Z]-[A-Za-z0-9.\-]+)/);if(n&&wc)wbs=wc[1];
   if(!n){const w=s.match(/\b([A-Z]-\d{2}-[A-Z]-[A-Za-z0-9.\-]+)\s*([^|]*)/);if(w){wbs=w[1];job=w[2].trim();if(/^[\d,.\s]*(THB)?$/.test(job))job='';}continue}
-  const nm=n[3].trim();if(!KEEP.test(nm)){skip++;continue}out.push({wbs,jobName:job,network:n[1],activity:n[2],activityName:nm,budget:n[4].replace(/,/g,'')})}
+  const nm=n[3].trim();if(!KEEP.test(nm)){skip++;continue}out.push({wbs,jobName:job,network:n[1],activity:n[2],activityName:nm,plan:n[4].replace(/,/g,'')})}
  return{rows:out,skip}}
 async function pick(inp){const f=inp.files[0];if(!f)return;const box=$('#imp');box.textContent='กำลังอ่านไฟล์...';
  try{const buf=await f.arrayBuffer();let lines=[];
   if(/\.(xlsx|xls|xlsm)$/i.test(f.name)){const wb=XLSX.read(buf,{type:'array'});wb.SheetNames.forEach(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}).forEach(r=>lines.push(r.join(' | '))))}
   else{let t;try{t=new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){t=new TextDecoder('windows-874').decode(buf)}
    if(/NWA/.test(t)&&t.includes('|'))lines=t.split(/\r?\n/);else{const wb=XLSX.read(t,{type:'string'});wb.SheetNames.forEach(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}).forEach(r=>lines.push(r.join(' | '))))}}
-  const r=parseImp(lines);S.imp=r;if(!r.rows.length){box.innerHTML='<p class="err">ไม่พบรายการที่นำเข้าได้ในไฟล์นี้</p>';return}
-  box.innerHTML=`<div class="info">พบ ${r.rows.length} รายการที่จะนำเข้า · ข้าม ${r.skip} รายการ (ค่าพัสดุ/ค่าขนส่ง/อื่นๆ)<br>WBS: ${h(r.rows[0].wbs||'ไม่พบในไฟล์ (จะถามตอนยืนยัน)')}</div><div class="w"><table><tr><th>โครงข่าย</th><th>กิจกรรม</th><th class="n">งบ</th></tr>${r.rows.map(x=>`<tr><td>${x.network}</td><td>${x.activity} ${h(x.activityName)}</td><td class="n">${fm(x.budget)}</td></tr>`).join('')}</table></div><button class="b" style="margin-top:8px" onclick="doImp()">ยืนยันนำเข้า</button>`}
- catch(e){box.innerHTML='<p class="err">อ่านไฟล์ไม่สำเร็จ: '+h(e.message)+'</p>'}}
-async function doImp(){let R=S.imp.rows;const w0=R.find(r=>r.wbs);let def=w0?w0.wbs:'';if(R.some(r=>!r.wbs)&&!def){def=(prompt('ไม่พบรหัส WBS ในไฟล์ — ใส่ WBS')||'').trim();if(!def)return}
+  S.imp=parseImp(lines);renderImp()}catch(e){box.innerHTML='<p class="err">อ่านไฟล์ไม่สำเร็จ: '+h(e.message)+'</p>'}}
+const pcts=()=>{const a=num($('#i_ap').value);return[a>0?a:100,DED]},bs=(p,d)=>r2(num(p)*(1-d/100)),calc=(p,a,d)=>r2(bs(p,d)*a/100);
+function impCalc(){if(S.imp)renderImp()}
+function renderImp(){const r=S.imp,box=$('#imp');if(!r.rows.length){box.innerHTML='<p class="err">ไม่พบรายการที่นำเข้าได้ในไฟล์นี้</p>';return}const[a,d]=pcts();
+ box.innerHTML=`<div class="info">พบ ${r.rows.length} รายการที่จะนำเข้า · ข้าม ${r.skip} รายการ<br>WBS: ${h(r.rows[0].wbs||'ไม่พบในไฟล์ (จะถามตอนยืนยัน)')} · อนุมัติ ${a}%</div><div class="w"><table><tr><th>โครงข่าย</th><th>กิจกรรม</th><th class="n">แผน SAP</th><th class="n">งบประมาณ 100%</th><th class="n">อนุมัติ ${a}%</th></tr>${r.rows.map(x=>`<tr><td>${x.network}</td><td>${x.activity} ${h(x.activityName)}</td><td class="n">${fm(x.plan)}</td><td class="n">${fm(bs(x.plan,d))}</td><td class="n"><b>${fm(calc(x.plan,a,d))}</b></td></tr>`).join('')}<tr><td colspan="2"><b>รวม</b></td><td class="n">${fm(r.rows.reduce((s,x)=>s+num(x.plan),0))}</td><td class="n">${fm(r.rows.reduce((s,x)=>s+bs(x.plan,d),0))}</td><td class="n"><b>${fm(r.rows.reduce((s,x)=>s+calc(x.plan,a,d),0))}</b></td></tr></table></div><button class="b" style="margin-top:8px" onclick="doImp()">ยืนยันนำเข้า</button>`}
+async function doImp(){let R=S.imp.rows;const[a,d]=pcts(),w0=R.find(r=>r.wbs);let def=w0?w0.wbs:'';if(R.some(r=>!r.wbs)&&!def){def=(prompt('ไม่พบรหัส WBS ในไฟล์ — ใส่ WBS')||'').trim();if(!def)return}
  R=R.map(r=>({...r,wbs:r.wbs||def}));const ws=uniq(R.map(r=>r.wbs));
- if(!confirm('นำเข้า '+R.length+' รายการ ของ '+ws.join(', ')+'\nข้อมูลหมายเลขงานเดิมของ WBS นี้จะถูกแทนที่ (ประวัติรายการเบิกไม่หาย)'))return;
+ if(!confirm('นำเข้า '+R.length+' รายการ ของ '+ws.join(', ')+'\nอนุมัติ '+a+'%\nข้อมูลหมายเลขงานเดิมของ WBS นี้จะถูกแทนที่ (รวมงบที่เคยแก้เอง · ประวัติรายการเบิกไม่หาย)'))return;
  try{for(const w of ws){const G=R.filter(r=>r.wbs===w).map(r=>{const id=w+'|'+r.network+'|'+r.activity,ex=S.wbs.find(q=>q.id===id);
-   return{id,wbs:w,jobName:(S.wbs.find(q=>q.wbs===w&&q.jobName)||{}).jobName||r.jobName,network:r.network,networkName:(S.wbs.find(q=>q.network===r.network&&q.networkName)||{}).networkName||'',activity:r.activity,activityName:r.activityName,budget:r.budget,costElement:ex?ex.costElement||'':''}});
+   return{id,wbs:w,jobName:(S.wbs.find(q=>q.wbs===w&&q.jobName)||{}).jobName||r.jobName,network:r.network,networkName:(S.wbs.find(q=>q.network===r.network&&q.networkName)||{}).networkName||'',activity:r.activity,activityName:r.activityName,plan:r.plan,deductPct:String(d),base:String(bs(r.plan,d)),approvalPct:String(a),manual:'0',budget:String(calc(r.plan,a,d)),costElement:ex?ex.costElement||'':''}});
    for(let i=0;i<G.length;i+=4)await call('save'+'Many',{sheet:'wbs',rows:G.slice(i,i+4)});await call('prune',{sheet:'wbs',wbs:w,keep:G.map(g=>g.id)})}
   await load();vWbs()}catch(e){alert('นำเข้าไม่สำเร็จ: '+e.message)}}
+/* ---- แก้ไขงบประมาณ (ทุกคน) ---- */
+function eb(id){const r=S.wbs.find(w=>w.id===id);if(!r)return;const plan=r.plan||'',base=r.base||(r.plan?String(bs(r.plan,DED)):r.budget)||'',ap=r.approvalPct||'100';
+ const o=document.createElement('div');o.id='dlg';o.style.cssText='position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;padding:12px;z-index:9;overflow:auto';
+ o.innerHTML=`<div class="card" style="width:100%;max-width:420px;margin:0"><b>แก้ไขงบประมาณ</b><div class="mut">${h(r.wbs)} · ${h(r.network)} · ${h(r.activity)} ${h(r.activityName)}</div>
+ <label>แผน SAP (บาท)</label><input id="e_plan" inputmode="decimal" value="${h(plan)}" oninput="ebCalc('p')">
+ <label>งบประมาณ 100% (บาท)</label><input id="e_base" inputmode="decimal" value="${h(base)}" oninput="ebCalc('b')">
+ <label>% ที่อนุมัติ</label><input id="e_ap" inputmode="decimal" value="${h(ap)}" oninput="ebCalc('b')">
+ <label>งบที่อนุมัติ (บาท) — ใช้เป็นงบของกิจกรรม</label><input id="e_bud" inputmode="decimal" value="${h(r.budget)}">
+ <div class="mut">เปลี่ยนค่าด้านบน ระบบคำนวณช่องถัดไปให้ · พิมพ์ตัวเลขทับเองได้ (จะขึ้นป้าย "แก้ไขเอง") · ทุกการแก้ไขถูกบันทึกในประวัติ</div>
+ <p class="err" id="eerr"></p><button class="b" onclick="ebSave('${h(id)}')">บันทึก</button> <button class="s" onclick="$('#dlg').remove()">ยกเลิก</button></div>`;document.body.appendChild(o)}
+function ebCalc(s){const g=i=>num($('#e_'+i).value);if(s==='p')$('#e_base').value=bs(g('plan'),DED);$('#e_bud').value=r2(g('base')*(g('ap')||100)/100)}
+async function ebSave(id){const c=i=>$('#e_'+i).value.replace(/,/g,'').trim(),p=c('plan'),b=c('base'),a=c('ap'),v=c('bud');
+ if([b,v].some(x=>x===''||isNaN(+x)||+x<0)||(p!==''&&isNaN(+p))){$('#eerr').textContent='กรอกตัวเลขให้ถูกต้อง';return}
+ const man=(Math.abs(+v-r2(+b*(num(a)||100)/100))>0.005||(p!==''&&Math.abs(+b-bs(p,DED))>0.005))?'1':'0';
+ try{await call('editBudget',{id,row:{plan:p,deductPct:String(DED),base:b,approvalPct:a,budget:v,manual:man}});$('#dlg').remove();await load();go(S.tab)}catch(e){$('#eerr').textContent=e.message}}
 /* ---- ประวัติการใช้งาน ---- */
-const AL={login:'เข้าสู่ระบบ',login_fail:'เข้าสู่ระบบไม่สำเร็จ',create:'เพิ่มรายการ',update:'แก้ไขรายการ',delete:'ลบ',import:'นำเข้าไฟล์',prune_wbs:'ลบหมายเลขงานเดิม',word:'ดาวน์โหลด Word',export:'ส่งออกข้อมูล',create_wbs:'เพิ่มหมายเลขงาน',update_wbs:'แก้ไขหมายเลขงาน',create_users:'เพิ่มผู้ใช้',update_users:'แก้ไขผู้ใช้',update_:'แก้ไข',create_:'เพิ่ม'};
+const AL={login:'เข้าสู่ระบบ',login_fail:'เข้าสู่ระบบไม่สำเร็จ',create:'เพิ่มรายการ',update:'แก้ไขรายการ',delete:'ลบ',import:'นำเข้าไฟล์',prune_wbs:'ลบหมายเลขงานเดิม',word:'ดาวน์โหลด Word',export:'ส่งออกข้อมูล',edit_budget:'แก้ไขงบประมาณ',create_wbs:'เพิ่มหมายเลขงาน',update_wbs:'แก้ไขหมายเลขงาน',create_users:'เพิ่มผู้ใช้',update_users:'แก้ไขผู้ใช้',update_:'แก้ไข',create_:'เพิ่ม'};
 function vLogs(){$('#main').innerHTML=`<div class="card w"><b>ประวัติการเข้าใช้งานและบันทึกข้อมูล (ล่าสุด 300 รายการ)</b><table><tr><th>เวลา</th><th>ผู้ใช้</th><th>การกระทำ</th><th>รายละเอียด</th></tr>${S.logs.map(l=>`<tr><td class="mut">${h(new Date(l.ts).toLocaleString('th-TH'))}</td><td>${h(l.empId)}<br><span class="mut">${h(l.name)}</span></td><td>${h(AL[l.action]||l.action)}</td><td class="mut" title="${h(l.detail)}">${h(l.target)}<br>${h((l.detail||'').slice(0,90))}</td></tr>`).join('')}</table></div>`}
 $('#lid').addEventListener('keydown',e=>e.key==='Enter'&&login());$('#lpin').addEventListener('keydown',e=>e.key==='Enter'&&login());
 </script></body></html>
