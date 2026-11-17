@@ -1,8 +1,7 @@
 <!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ระบบใบตัดงบหมายเลขงาน</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <style>
 :root{--p:#5a2a82;--a:#e9a400;--bg:#f5f3f8;--l:#ddd6e6;--t:#231a2e}
 *{box-sizing:border-box}body{margin:0;font:16px/1.5 Sarabun,sans-serif;background:var(--bg);color:var(--t)}
@@ -39,8 +38,14 @@ details.fd[open]{background:#fff}details.fd[open]::before{background:#fff}
 details.fd.sub{background:#faf7fd;border-color:var(--l);margin-top:16px;padding:8px 10px;border-radius:0 8px 8px 8px}details.fd.sub::before{width:62px;height:9px;top:-9px;background:#faf7fd;border-color:var(--l)}
 details.fd.sub[open]{background:#fff}details.fd.sub[open]::before{background:#fff}
 details.fd>details,details.fd>.rl{margin-left:8px}svg.di{width:14px;height:14px;vertical-align:-2px}
+#ld{position:fixed;top:0;left:0;right:0;height:3px;z-index:20;display:none;background:linear-gradient(90deg,transparent,var(--a),transparent);background-size:50% 100%;background-repeat:no-repeat;animation:ldm 1s linear infinite}@keyframes ldm{from{background-position:-50% 0}to{background-position:150% 0}}
+.kg{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}@media(min-width:700px){.kg{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:#fff;border:1px solid var(--l);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column}.kpi span{font-size:13px;color:#7a6b8a}.kpi b{font-size:22px;color:var(--p);font-weight:600}.kpi b.err{color:#b00020}.kpi small{font-size:12px;color:#7a6b8a}
+.dw,.wl{padding:8px 0;border-top:1px solid #eee;cursor:pointer}.dw:first-of-type,.wl:first-of-type{border-top:0}.dt{display:flex;flex-direction:column}.wl{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.hb{display:grid;grid-template-columns:84px 1fr auto;gap:8px;align-items:center;font-size:13px;margin-top:6px}.hb .bar{margin:0}.fb2{padding:8px 12px}.fb2 .g{margin-bottom:0}.card h3{margin:0 0 6px;font-size:16px}
 #login{max-width:360px;margin:8vh auto;padding:0 12px}
 </style></head><body>
+<div id="ld"></div>
 <div id="login"><div class="card"><h2 style="margin:0 0 6px;color:var(--p)">ใบตัดงบหมายเลขงาน</h2>
 <div class="mut" id="mode"></div>
 <label>รหัสพนักงาน</label><input id="lid" inputmode="numeric" autocomplete="username">
@@ -90,8 +95,8 @@ const TY=[['wage','ค่าจ้าง'],['ot','ค่าล่วงเวล
 const num=v=>parseFloat(String(v||'').replace(/,/g,''))||0,fm=v=>num(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 /* ★ วาง URL ของ Web App (Apps Script) ระหว่างเครื่องหมายคำพูดด้านล่าง เช่น 'https://script.google.com/macros/s/xxxx/exec'
    ถ้าใส่แล้ว ทุกคนใช้ฐานข้อมูล Google Sheets โดยอัตโนมัติ และหน้าตั้งค่า URL จะถูกซ่อน · ถ้าเว้นว่าง = โหมดทดลองในเครื่อง */
-const API_URL='https://script.google.com/macros/s/AKfycbyTa-OGVCgOzEKXsKx7hHFK_wzJT-nepbylJQfA8mAyePJIKcTy64V91LObHNkI16cG/exec';
-let API=API_URL,mem=null,S={user:null,pin:'',open:{},wbs:[],users:[],recs:[],tab:'new',ed:null};
+const API_URL='https://script.google.com/macros/s/AKfycbwnbkdQDC_d2oNM5YHfbdQdjs25-9fApo3wFpYXbOyXyJqSIZpM76iOaVYdgQyF378G/exec';
+let API=API_URL,mem=null,S={user:null,pin:'',open:{},wbs:[],users:null,recs:[],tab:'new',ed:null};
 if(!API_URL)try{API=localStorage.getItem('api')||''}catch(e){}
 $('#api').value=API;if(API_URL)$('#cfg').hidden=true;$('#mode').textContent=API_URL?'':(API?'เชื่อมต่อฐานข้อมูล Google Sheets':'โหมดทดลอง: ข้อมูลเก็บในเครื่องนี้เท่านั้น');
 function saveApi(){API=$('#api').value.trim();try{localStorage.setItem('api',API)}catch(e){}$('#mode').textContent=API?'เชื่อมต่อฐานข้อมูล Google Sheets':'โหมดทดลอง: ข้อมูลเก็บในเครื่องนี้เท่านั้น'}
@@ -105,6 +110,7 @@ function local(a,au,x){const d=db(),u=d.users.find(u=>u.empId===au.id&&u.active!
  const L=(act,tg,dt)=>{d.logs.unshift({ts:new Date().toISOString(),empId:au.id,name:u?u.name:'',action:act,target:tg||'',detail:String(dt||'').slice(0,1500)});d.logs.length=Math.min(d.logs.length,2000)};
  if(!ok){L('login_fail');keep();throw new Error('รหัสพนักงานหรือ PIN ไม่ถูกต้อง')}
  const adm=u.role==='admin',me={empId:u.empId,name:u.name,role:u.role},sh=x.sheet,t=d[sh];
+ if(a==='boot'){if(x.first)L('login');keep();return{me,wbs:d.wbs.map(w=>({...w})),records:d.records.map(r=>({...r}))}}
  if(a==='login'){L('login');keep();return{me}}
  if(a==='log'){L(x.act,x.target);keep();return{me}}
  if(a==='editBudget'){const o=d.wbs.find(q=>q.id===x.id);if(!o)throw new Error('ไม่พบกิจกรรม');const b={plan:o.plan,base:o.base,approvalPct:o.approvalPct,budget:o.budget};['plan','base','approvalPct','budget','manual'].forEach(k=>{if(x.row[k]!==undefined)o[k]=String(x.row[k])});L('edit_budget','wbs:'+x.id,JSON.stringify({before:b,after:x.row}));keep();return{me}}
@@ -116,24 +122,33 @@ function local(a,au,x){const d=db(),u=d.users.find(u=>u.empId===au.id&&u.active!
  const up=r=>{const j=t.findIndex(q=>q.id===r.id);j<0?t.push(r):t[j]={...t[j],...r}};
  if(a==='save'){const r={...x.row},o=t.find(q=>q.id===r.id);
   if(sh==='records'){if(!r.id)r.id=Date.now()+Math.random().toString(36).slice(2,6);r.empId=o?o.empId:u.empId;r.ts=new Date().toISOString()}
-  if(sh==='users'&&!r.pin&&o)r.pin=o.pin;up(r);const{pin,...lg}=r;L(sh==='records'?(o?'update':'create'):(o?'update_':'create_')+sh,sh+':'+r.id,JSON.stringify(lg));keep();return{me}}
+  if(sh==='users'&&!r.pin&&o)r.pin=o.pin;up(r);const{pin,...lg}=r;L(sh==='records'?(o?'update':'create'):(o?'update_':'create_')+sh,sh+':'+r.id,JSON.stringify(lg));keep();return{me,row:sh==='records'?r:undefined}}
  if(a==='saveMany'){x.rows.forEach(up);L('import','wbs',x.rows.length+' แถว '+x.rows[0].wbs);keep();return{me}}
  if(a==='prune'){const k=new Set(x.keep),n=t.length;d.wbs=t.filter(w=>w.wbs!==x.wbs||k.has(w.id));L('prune_wbs',x.wbs,'ลบ '+(n-d.wbs.length)+' แถวที่ไม่อยู่ในไฟล์');keep();return{me}}
  if(a==='del'){const o=t.find(q=>q.id===x.id);d[sh]=t.filter(q=>q.id!==x.id);const{pin,...lg}=o||{};L('delete',sh+':'+x.id,JSON.stringify(lg));keep();return{me}}}
+const LIB={JSZip:'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',XLSX:'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'};
+const lib=k=>window[k]?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src=LIB[k];s.onload=ok;s.onerror=()=>no(new Error('โหลดไลบรารีไม่ได้ (ต้องเชื่อมต่ออินเทอร์เน็ต)'));document.head.appendChild(s)});
+let busy=0;const ld=d=>{busy+=d;$('#ld').style.display=busy>0?'block':'none'};
 function jsonp(p){return new Promise((ok,no)=>{const cb='cb'+Date.now()+Math.floor(Math.random()*1e6),s=document.createElement('script');
- window[cb]=r=>{delete window[cb];s.remove();ok(r)};s.onerror=()=>{s.remove();no(new Error('เชื่อมต่อฐานข้อมูลไม่ได้'))};
+ const fin=()=>{clearTimeout(to);delete window[cb];s.remove()},to=setTimeout(()=>{fin();no(new Error('เซิร์ฟเวอร์ตอบช้าเกินไป กรุณาลองใหม่'))},30000);
+ window[cb]=r=>{fin();ok(r)};s.onerror=()=>{fin();no(new Error('เชื่อมต่อฐานข้อมูลไม่ได้'))};
  s.src=API+'?'+new URLSearchParams({...p,callback:cb});document.body.appendChild(s)})}
 async function call(a,x={}){const au={id:S.user?S.user.empId:$('#lid').value.trim(),pin:S.user?S.pin:$('#lpin').value.trim()};
  if(!API)return local(a,au,x);const q={action:a,id:au.id,pin:au.pin};for(const k in x)q[k==='id'?'rid':k]=typeof x[k]==='object'?JSON.stringify(x[k]):x[k];
- const r=await jsonp(q);if(!r.ok)throw new Error(r.err||'ผิดพลาด');return r}
+ ld(1);try{const r=await jsonp(q);if(!r.ok)throw new Error(r.err||'ผิดพลาด');return r}finally{ld(-1)}}
 /* ---- เข้าสู่ระบบ ---- */
-async function login(){$('#lerr').textContent='';try{const r=await call('login');S.user=r.me;S.pin=$('#lpin').value.trim();$('#login').hidden=true;$('#app').hidden=false;
- $('#who').textContent=S.user.name+' ('+S.user.empId+') '+(S.user.role==='admin'?'ผู้ดูแล':'ผู้ใช้');await load();go('new')}catch(e){$('#lerr').textContent=e.message}}
-function logout(){S.user=null;S.pin='';$('#app').hidden=true;$('#login').hidden=false;$('#lpin').value=''}
-async function load(){S.wbs=(await call('list',{sheet:'wbs'})).rows;S.recs=(await call('list',{sheet:'records'})).rows;S.recs.sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
- if(S.user.role==='admin'){S.users=(await call('list',{sheet:'users'})).rows;S.logs=(await call('list',{sheet:'logs'})).rows}}
-function go(t){S.tab=t;const adm=S.user.role==='admin',T=[['new','บันทึกรายการ'],['list','รายการ / พิมพ์ Word'],['wbs','หมายเลขงาน']].concat(adm?[['users','ผู้ใช้งาน'],['logs','ประวัติการใช้งาน']]:[]);
- $('#nav').innerHTML=T.map(x=>`<button class="${x[0]===t?'on':''}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');$('#main').innerHTML='';({new:vNew,list:vList,wbs:vWbs,users:vUsers,logs:vLogs})[t]()}
+async function login(){$('#lerr').textContent='';try{const r=await call('boot',{first:1});S.user=r.me;S.pin=$('#lpin').value.trim();feed(r);$('#login').hidden=true;$('#app').hidden=false;
+ $('#who').textContent=S.user.name+' ('+S.user.empId+') '+(S.user.role==='admin'?'ผู้ดูแล':'ผู้ใช้');go('dash')}catch(e){$('#lerr').textContent=e.message}}
+function logout(){S.user=null;S.pin='';S.users=null;S.logs=null;$('#app').hidden=true;$('#login').hidden=false;$('#lpin').value=''}
+function feed(r){S.wbs=r.wbs;S.recs=r.records;reindex()}
+async function load(){feed(await call('boot'))}
+function reindex(){S.recs.sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));S.by={};S.cw={};S.cn={};const u={};
+ S.recs.forEach((x,k)=>{const a=x.wbs+'|'+x.network+'|'+x.activity;(S.by[a]=S.by[a]||[]).push({x,k});S.cw[x.wbs]=(S.cw[x.wbs]||0)+1;const n=x.wbs+'|'+x.network;S.cn[n]=(S.cn[n]||0)+1;u[a]=(u[a]||0)+num(x.total)});
+ S.wbs.forEach(w=>w.used=u[w.id]||0)}
+async function go(t){S.tab=t;const adm=S.user.role==='admin',T=[['dash','ภาพรวม'],['new','บันทึกรายการ'],['list','รายการ / พิมพ์ Word'],['wbs','หมายเลขงาน']].concat(adm?[['users','ผู้ใช้งาน'],['logs','ประวัติการใช้งาน']]:[]);
+ $('#nav').innerHTML=T.map(x=>`<button class="${x[0]===t?'on':''}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
+ if((t==='users'&&!S.users)||t==='logs'){$('#main').innerHTML='<div class="card mut">กำลังโหลด...</div>';try{if(t==='logs')S.logs=(await call('list',{sheet:'logs'})).rows;else S.users=(await call('list',{sheet:'users'})).rows}catch(e){$('#main').innerHTML='<div class="card err">'+h(e.message)+'</div>';return}if(S.tab!==t)return}
+ $('#main').innerHTML='';({dash:vDash,new:vNew,list:vList,wbs:vWbs,users:vUsers,logs:vLogs})[t]()}
 const uniq=a=>[...new Set(a)];
 /* ---- ฟอร์มบันทึก ---- */
 function vNew(){const e=S.ed||{},now=new Date(),W=uniq(S.wbs.map(w=>w.wbs));
@@ -149,7 +164,7 @@ function vNew(){const e=S.ed||{},now=new Date(),W=uniq(S.wbs.map(w=>w.wbs));
  <div><label>พ.ศ.</label><input id="yr" inputmode="numeric" value="${h(e.year||now.getFullYear()+543)}"></div></div>
  <label>เดือน</label><select id="mo">${MONTHS.map((m,i)=>`<option value="${i+1}" ${(e.month||now.getMonth()+1)==i+1?'selected':''}>${m}</option>`).join('')}</select>
  <div class="g"><div><label>ผู้ควบคุมงาน (พิมพ์หรือเลือกเปลี่ยนได้)</label><input id="sup1" list="sl" value="${h(e.sup1||SUP)}"></div><div><label>ผู้ควบคุมงบ (พิมพ์หรือเลือกเปลี่ยนได้)</label><input id="sup2" list="sl" value="${h(e.sup2||SUP)}"></div></div>
- <datalist id="sl">${uniq([SUP,...S.recs.flatMap(r=>[r.sup1,r.sup2])]).filter(Boolean).map(v=>`<option value="${h(v)}">`).join('')}</datalist><p class="err" id="ferr"></p><button class="b" onclick="saveRec()">${e.id?'บันทึกการแก้ไข':'บันทึกลงฐานข้อมูล'}</button> ${e.id?'<button class="s" onclick="S.ed=null;vNew()">ยกเลิก</button>':''}</div>`;
+ <datalist id="sl">${uniq([SUP,...S.recs.flatMap(r=>[r.sup1,r.sup2])]).filter(Boolean).map(v=>`<option value="${h(v)}">`).join('')}</datalist><p class="err" id="ferr"></p><button class="b" id="sv" onclick="saveRec()">${e.id?'บันทึกการแก้ไข':'บันทึกลงฐานข้อมูล'}</button> ${e.id?'<button class="s" onclick="S.ed=null;vNew()">ยกเลิก</button>':''}</div>`;
  if(e.id){casc(1,e.network,e.activity)}else casc(1);tot()}
 function casc(l,n0,a0){const w=$('#f_wbs').value;if(l<=1){const N=uniq(S.wbs.filter(r=>r.wbs===w).map(r=>r.network));$('#f_net').innerHTML=N.map(v=>`<option ${v===n0?'selected':''} value="${v}">${v} ${h((S.wbs.find(r=>r.network===v)||{}).networkName)}</option>`).join('')}
  if(l<=2){const n=$('#f_net').value,A=S.wbs.filter(r=>r.wbs===w&&r.network===n);$('#f_act').innerHTML=A.map(r=>`<option ${r.activity===a0?'selected':''} value="${r.activity}">${r.activity} ${h(r.activityName)}</option>`).join('')}
@@ -162,15 +177,26 @@ async function saveRec(){const w=$('#f_wbs').value,n=$('#f_net').value,a=$('#f_a
   c_total:$('#c_total').value.trim(),sup1:$('#sup1').value.trim(),sup2:$('#sup2').value.trim(),d1:$('#d1').value,d2:$('#d2').value,month:$('#mo').value,year:$('#yr').value};
  TY.forEach(([k])=>{o[k]=$('#a_'+k).value.replace(/,/g,'').trim();o['c_'+k]=$('#c_'+k).value.trim()});o.total=TY.reduce((s,[k])=>s+num(o[k]),0);
  if(!o.total){$('#ferr').textContent='กรุณากรอกจำนวนเงินอย่างน้อย 1 รายการ';return}
- try{await call('save',{sheet:'records',row:o});S.ed=null;await load();go('list')}catch(e){$('#ferr').textContent=e.message}}
+ const bt=$('#sv');if(bt)bt.disabled=true;try{const r=await call('save',{sheet:'records',row:o}),row=r.row||o,i=S.recs.findIndex(x=>x.id===row.id);i<0?S.recs.push(row):S.recs[i]=row;reindex();S.ed=null;go('list')}catch(e){$('#ferr').textContent=e.message;if(bt)bt.disabled=false}}
 /* ---- รายการ + Word ---- */
-function vList(){const adm=S.user.role==='admin';$('#main').innerHTML=`<div class="card w"><div style="display:flex;gap:8px;margin-bottom:8px"><button class="b" onclick="exp('xlsx')">ส่งออก Excel</button><button class="s" onclick="exp('csv')">ส่งออก CSV</button></div><table><tr><th>งวด</th><th>ชื่อ</th><th>WBS / โครงข่าย / กิจกรรม</th><th class="n">รวม</th><th></th></tr>
- ${S.recs.map((r,i)=>`<tr><td>${h(MONTHS[r.month-1])} ${h(r.year)}</td><td>${h(r.payee)}<br><span class="mut">บันทึกโดย ${h(r.empId)}</span></td><td>${h(r.wbs)}<br><span class="mut">${h(r.network)} / ${h(r.activity)}</span></td><td class="n">${fm(r.total)}</td>
- <td class="n"><button class="s" onclick="dl(${i})">Word</button> <button class="s" onclick="S.ed=S.recs[${i}];go('new')">แก้ไข</button> <button class="s r" onclick="rm('records','${h(r.id)}')">ลบ</button></td></tr>`).join('')||'<tr><td colspan="5" class="mut">ยังไม่มีรายการ</td></tr>'}</table></div>`}
-async function dl(i){const r=S.recs[i];try{const z=await JSZip.loadAsync(TPL,{base64:true});z.file('word/document.xml',fillDoc(await z.file('word/document.xml').async('string'),r));
+const rk=x=>x.year+'-'+String(x.month).padStart(2,'0'),mlab=k=>MS[+k.slice(-2)-1]+' '+k.slice(2,4);S.f={w:'',a:'',b:'',q:''};
+const fr=q=>{const f=S.f,t=(f.q||'').trim().toLowerCase();return S.recs.map((x,k)=>({x,k})).filter(({x})=>(!f.w||x.wbs===f.w)&&(!f.a||rk(x)>=f.a)&&(!f.b||rk(x)<=f.b)&&(!q||!t||(x.payee+' '+x.wbs+' '+x.network+' '+x.empId).toLowerCase().includes(t)))};
+function fbar(q){const f=S.f,K=uniq(S.recs.map(rk)).sort(),W=uniq(S.wbs.map(r=>r.wbs)),on=f.w||f.a||f.b||(q&&f.q),
+ mo=v=>K.concat(v&&!K.includes(v)?[v]:[]).sort().map(k=>`<option value="${k}" ${k===v?'selected':''}>${mlab(k)}</option>`).join('');
+ return`<div class="card fb2"><div class="g"><div><label>หมายเลขงาน</label><select onchange="setF('w',this.value)"><option value="">ทั้งหมด</option>${W.map(w=>`<option ${w===f.w?'selected':''}>${h(w)}</option>`).join('')}</select></div>${q?`<div><label>ค้นหาชื่อ / WBS</label><input value="${h(f.q)}" oninput="S.f.q=this.value;clearTimeout(S.qt2);S.qt2=setTimeout(drawList,150)"></div>`:'<div></div>'}</div>
+ <div class="g"><div><label>ตั้งแต่เดือน</label><select onchange="setF('a',this.value)"><option value="">ทุกเดือน</option>${mo(f.a)}</select></div><div><label>ถึงเดือน</label><select onchange="setF('b',this.value)"><option value="">ทุกเดือน</option>${mo(f.b)}</select></div></div>
+ ${on?`<button class="s" style="margin-top:8px" onclick="S.f={w:'',a:'',b:'',q:''};go(S.tab)">ล้างตัวกรอง</button>`:''}</div>`}
+function setF(k,v){S.f[k]=v;if(S.f.a&&S.f.b&&S.f.a>S.f.b){if(k==='a')S.f.b=v;else S.f.a=v}go(S.tab)}
+function vList(){$('#main').innerHTML=fbar(true)+`<div class="card w"><div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap"><button class="b" onclick="exp('xlsx')">ส่งออก Excel</button><button class="s" onclick="exp('csv')">ส่งออก CSV</button><span class="mut" id="lc"></span></div><table><tr><th>งวด</th><th>ชื่อ</th><th>WBS / โครงข่าย / กิจกรรม</th><th class="n">รวม</th><th></th></tr><tbody id="lt"></tbody></table></div>`;drawList()}
+function drawList(){const L=fr(true);$('#lc').textContent=L.length+' รายการ · รวม '+fm(L.reduce((s,o)=>s+num(o.x.total),0))+' บาท (ส่งออกตามตัวกรอง)';
+ $('#lt').innerHTML=L.map(({x:r,k:i})=>`<tr><td>${h(MONTHS[r.month-1])} ${h(r.year)}</td><td>${h(r.payee)}<br><span class="mut">บันทึกโดย ${h(r.empId)}</span></td><td>${h(r.wbs)}<br><span class="mut">${h(r.network)} / ${h(r.activity)}</span></td><td class="n">${fm(r.total)}</td>
+ <td class="n"><button class="s" onclick="dl(${i})">Word</button> <button class="s" onclick="S.ed=S.recs[${i}];go('new')">แก้ไข</button> <button class="s r" onclick="rm('records','${h(r.id)}')">ลบ</button></td></tr>`).join('')||'<tr><td colspan="5" class="mut">ไม่พบรายการ</td></tr>'}
+async function dl(i){const r=S.recs[i];try{await lib('JSZip');const z=await JSZip.loadAsync(TPL,{base64:true});z.file('word/document.xml',fillDoc(await z.file('word/document.xml').async('string'),r));
  const b=await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'}),a=document.createElement('a');
  a.href=URL.createObjectURL(b);a.download='ใบตัดงบ_'+r.wbs+'_'+r.payee+'.docx';document.body.appendChild(a);a.click();a.remove();call('log',{act:'word',target:'records:'+r.id}).catch(()=>{})}catch(e){alert('สร้างไฟล์ไม่สำเร็จ: '+e.message)}}
-async function rm(sh,id){if(!confirm('ยืนยันการลบ?'))return;try{await call('del',{sheet:sh,id});await load();go(S.tab)}catch(e){alert(e.message)}}
+async function rm(sh,id){if(!confirm('ยืนยันการลบ?'))return;const bw=S.wbs,br=S.recs;
+ if(sh==='records')S.recs=S.recs.filter(x=>x.id!==id);else if(sh==='wbs')S.wbs=S.wbs.filter(x=>x.id!==id);else if(sh==='users')S.users=(S.users||[]).filter(x=>x.id!==id);
+ reindex();go(S.tab);try{await call('del',{sheet:sh,id})}catch(e){alert(e.message);S.wbs=bw;S.recs=br;if(sh==='users')S.users=null;reindex();go(S.tab)}}
 /* ---- ผู้ดูแล: หมายเลขงาน / ผู้ใช้ ---- */
 const bar=(u,b)=>{const p=b>0?u/b*100:0;return`<div class="bar"><i style="width:${Math.min(100,p)}%;${p>100?'background:#b00020':''}"></i></div>`};
 const sm=(b,u,bs0)=>`<div class="sm">${bs0!==undefined&&Math.abs(bs0-b)>0.005?`<span>งบประมาณ 100%<b>${fm(bs0)}</b></span>`:''}<span>งบที่อนุมัติ<b>${fm(b)}</b></span><span>ใช้ไป<b>${fm(u)}</b></span><span>คงเหลือ<b class="${b-u<0?'err':''}">${fm(b-u)}</b></span></div>`;
@@ -180,7 +206,7 @@ function vWbs(){const adm=S.user.role==='admin',F=[['wbs','WBS'],['jobName','ช
  <details class="card"><summary><b>เพิ่ม / แก้ไขหมายเลขงานทีละรายการ</b></summary><div class="g">${F.map(([k,n])=>`<div><label>${n}</label><input id="w_${k}"></div>`).join('')}</div><p class="err" id="werr"></p><button class="b" onclick="saveW()">บันทึก</button></details>`:'';
  const [B,U,BS]=sumOf(S.wbs);
  $('#main').innerHTML=adminCards+`<div class="card"><b>สรุปรวมทุกหมายเลขงาน</b> <span class="mut">${uniq(S.wbs.map(r=>r.wbs)).length} หมายเลขงาน · ${uniq(S.wbs.map(r=>r.network)).length} โครงข่าย</span>${sm(B,U,BS)}${bar(U,B)}</div>
- <input id="q" placeholder="ค้นหา WBS / โครงข่าย / ชื่องาน / กิจกรรม" value="${h(S.q||'')}" oninput="S.q=this.value;drawWbs()" style="margin-bottom:8px"><div style="display:flex;gap:8px"><button class="s" onclick="fold(1)">เปิดทั้งหมด</button><button class="s" onclick="fold(0)">ปิดทั้งหมด</button></div><div id="wl"></div>`;drawWbs()}
+ <input id="q" placeholder="ค้นหา WBS / โครงข่าย / ชื่องาน / กิจกรรม" value="${h(S.q||'')}" oninput="S.q=this.value;clearTimeout(S.qt);S.qt=setTimeout(drawWbs,150)" style="margin-bottom:8px"><div style="display:flex;gap:8px"><button class="s" onclick="fold(1)">เปิดทั้งหมด</button><button class="s" onclick="fold(0)">ปิดทั้งหมด</button></div><div id="wl"></div>`;drawWbs()}
 const FI=c=>`<svg class="ic ${c}" viewBox="0 0 24 24"><g class="fc"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></g><g class="fo"><path class="bk" d="M3 7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v1H3z"/><path d="M1.5 10h21l-2.3 8.2a2 2 0 0 1-1.9 1.4H5.7a2 2 0 0 1-1.9-1.4z"/></g></svg>`,
  DI='<svg class="di" viewBox="0 0 24 24"><path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="none" stroke="#5a2a82" stroke-width="1.6"/><path d="M14 2v5h5M8 12h8M8 16h6" fill="none" stroke="#5a2a82" stroke-width="1.6"/></svg>';
 function ew(w){const r=S.wbs.find(x=>x.wbs===w);if(!r)return;const o=document.createElement('div');o.id='dlg';o.style.cssText='position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;padding:12px;z-index:9;overflow:auto';
@@ -188,36 +214,36 @@ function ew(w){const r=S.wbs.find(x=>x.wbs===w);if(!r)return;const o=document.cr
  <div class="mut">ชื่อใหม่ใช้กับทุกกิจกรรมของหมายเลขงานนี้ และรายการเบิกที่บันทึกไว้แล้ว (ชื่อที่ขึ้นในใบตัดงบ Word) · บันทึกในประวัติการใช้งาน</div><p class="err" id="eerr"></p>
  <button class="b" onclick="ewSave('${h(w)}')">บันทึก</button> <button class="s" onclick="$('#dlg').remove()">ยกเลิก</button></div>`;document.body.appendChild(o);$('#e_name').focus()}
 async function ewSave(w){const n=$('#e_name').value.trim();if(!n){$('#eerr').textContent='กรอกชื่องาน';return}
- try{await call('editWbsName',{wbs:w,name:n});$('#dlg').remove();await load();go(S.tab)}catch(e){$('#eerr').textContent=e.message}}
+ try{await call('editWbsName',{wbs:w,name:n});$('#dlg').remove();S.wbs.forEach(q=>{if(q.wbs===w)q.jobName=n});S.recs.forEach(q=>{if(q.wbs===w)q.jobName=n});go(S.tab)}catch(e){$('#eerr').textContent=e.message}}
 function fold(o){document.querySelectorAll('#wl details').forEach(d=>{d.open=!!o})}
 function drawWbs(){const adm=S.user.role==='admin',q=(S.q||'').trim().toLowerCase(),hit=r=>!q||(r.wbs+r.jobName+r.network+r.networkName+r.activityName).toLowerCase().includes(q);
- const W=uniq(S.wbs.filter(hit).map(r=>r.wbs)),op=k=>S.open[k]?'open':'',tg=k=>`ontoggle="S.open['${h(k)}']=this.open"`,cnt=(w,n,a)=>S.recs.filter(x=>x.wbs===w&&(!n||x.network===n)&&(!a||x.activity===a)).length;
+ const W=uniq(S.wbs.filter(hit).map(r=>r.wbs)),op=k=>S.open[k]?'open':'',tg=k=>`ontoggle="S.open['${h(k)}']=this.open"`,cnt=(w,n)=>n?(S.cn[w+'|'+n]||0):(S.cw[w]||0);
  $('#wl').innerHTML=W.map(w=>{const all=S.wbs.map((r,i)=>({...r,i})).filter(r=>r.wbs===w),[b,u,bb]=sumOf(all),N=uniq(all.map(r=>r.network));
   return`<details class="fd" ${W.length===1||q?'open':op('w:'+w)} ${tg('w:'+w)}><summary class="fh">${FI('')}<div class="fb"><b>${h(w)}</b> <span class="mut">${h(all[0].jobName)}</span> <a class="ed" onclick="event.preventDefault();event.stopPropagation();ew('${h(w)}')">✎ แก้ชื่องาน</a><div class="cnt">${N.length} โครงข่าย · ${cnt(w)} รายการเบิก</div>${sm(b,u,bb)}${bar(u,b)}${adm?`<button class="s r" style="margin-top:6px" onclick="event.preventDefault();rmW('${h(w)}')">ลบ WBS นี้</button>`:''}</div></summary>
   ${N.map(n=>{const R=all.filter(r=>r.network===n),[nb,nu,nbb]=sumOf(R);return`<details class="fd sub" ${q?'open':op('n:'+w+n)} ${tg('n:'+w+n)}><summary class="fh">${FI('s')}<div class="fb"><b>โครงข่าย ${h(n)}</b> <span class="mut">${h(R[0].networkName)}</span><div class="cnt">${R.length} กิจกรรม · ${cnt(w,n)} รายการเบิก</div>${sm(nb,nu,nbb)}${bar(nu,nb)}</div></summary>
-   ${R.map(r=>{const rc=S.recs.map((x,k)=>({x,k})).filter(o=>o.x.wbs===r.wbs&&o.x.network===r.network&&o.x.activity===r.activity),k='a:'+r.id;
+   ${R.map(r=>{const rc=S.by[r.id]||[],k='a:'+r.id;
     return`<details class="act" ${op(k)} ${tg(k)}><summary class="ar"><span>${h(r.activity)} ${h(r.activityName)}<br><span class="cnt">${rc.length?rc.length+' รายการเบิก ▾':'ยังไม่มีรายการ'}</span></span><span class="n">${r.budget?fm(r.budget):'-'}</span><span class="n">${fm(r.used)}</span><span class="n ${r.budget&&num(r.budget)-num(r.used)<0?'err':''}">${r.budget?fm(num(r.budget)-num(r.used)):'-'}</span></summary>
     <div class="rl"><div class="mut" style="padding:6px 8px">${r.plan?`แผน SAP ${fm(r.plan)} → งบประมาณ 100% <b>${fm(r.base||r.budget)}</b> · อนุมัติ ${h(r.approvalPct||100)}% = <b>${fm(r.budget)}</b>${r.manual==='1'?' · <b>แก้ไขเอง</b>':''}<br>`:''}<a style="color:var(--p);cursor:pointer" onclick="eb('${h(r.id)}')">แก้ไขงบประมาณ</a></div>${rc.map(({x,k})=>`<div class="rr"><span>${DI} ${h(MONTHS[x.month-1])} ${h(x.year)}<br><b>${h(x.payee)}</b> <span class="mut">โดย ${h(x.empId)}</span></span><span class="n">${fm(x.total)}</span><span class="n"><a onclick="dl(${k})">Word</a> · <a onclick="S.ed=S.recs[${k}];go('new')">แก้ไข</a> · <a class="err" onclick="rm('records','${h(x.id)}')">ลบ</a></span></div>`).join('')||'<div class="mut" style="padding:6px 8px">ยังไม่มีรายการเบิกในกิจกรรมนี้</div>'}
     ${adm?`<div style="padding:6px 8px"><a onclick="fw(${r.i})">แก้ไขกิจกรรมนี้</a> · <a class="err" onclick="rm('wbs','${h(r.id)}')">ลบกิจกรรมนี้</a></div>`:''}</div></details>`}).join('')}</details>`}).join('')}</details>`}).join('')||'<div class="card mut">ไม่พบข้อมูล</div>'}
 /* ---- ส่งออก ---- */
-function exp(kind){if(!S.recs.length){alert('ยังไม่มีรายการให้ส่งออก');return}
+async function exp(kind){const FL=fr(true).map(o=>o.x);if(!FL.length){alert('ไม่มีรายการตามตัวกรองให้ส่งออก');return}
  const m=r=>S.wbs.find(w=>w.wbs===r.wbs&&w.network===r.network&&w.activity===r.activity)||{};
- const A=S.recs.map(r=>{const w=m(r),o={'ปี พ.ศ.':r.year,'เดือน':MONTHS[r.month-1]||r.month,'งวดวันที่':r.d1,'ถึงวันที่':r.d2,'WBS':r.wbs,'ชื่องาน':r.jobName,'เลขโครงข่าย':r.network,'ชื่อโครงข่าย':w.networkName||'','เลขกิจกรรม':r.activity,'ชื่อกิจกรรม':w.activityName||'','ชื่อ-สกุล':r.payee,'อัตราค่าจ้าง':num(r.rate)||''};
+ const A=FL.map(r=>{const w=m(r),o={'ปี พ.ศ.':r.year,'เดือน':MONTHS[r.month-1]||r.month,'งวดวันที่':r.d1,'ถึงวันที่':r.d2,'WBS':r.wbs,'ชื่องาน':r.jobName,'เลขโครงข่าย':r.network,'ชื่อโครงข่าย':w.networkName||'','เลขกิจกรรม':r.activity,'ชื่อกิจกรรม':w.activityName||'','ชื่อ-สกุล':r.payee,'อัตราค่าจ้าง':num(r.rate)||''};
   TY.forEach(([k,n])=>{o['ค่า'+n.replace(/^ค่า/,'')]=num(r[k])||'';o['รหัสบัญชี'+n.replace(/^ค่า/,'')]=r['c_'+k]||''});
   o['รวม']=num(r.total);o['รหัสบัญชีรวม']=r.c_total||'';o['ผู้ควบคุมงาน']=r.sup1||'';o['ผู้ควบคุมงบ']=r.sup2||'';o['บันทึกโดย']=r.empId;o['วันเวลาบันทึก']=r.ts?new Date(r.ts).toLocaleString('th-TH'):'';return o}),
  B=S.wbs.map(w=>({'WBS':w.wbs,'เลขโครงข่าย':w.network,'ชื่อโครงข่าย':w.networkName||'','เลขกิจกรรม':w.activity,'ชื่อกิจกรรม':w.activityName,'แผน SAP':num(w.plan)||'','% อนุมัติ':w.approvalPct||'','งบประมาณ 100%':num(w.base||w.budget),'งบที่อนุมัติ':num(w.budget),'ใช้ไป':num(w.used),'คงเหลือ':num(w.budget)-num(w.used),'จำนวนรายการ':S.recs.filter(x=>x.wbs===w.wbs&&x.network===w.network&&x.activity===w.activity).length})),
  st=new Date().toISOString().slice(0,10);
- if(kind==='xlsx'){if(typeof XLSX==='undefined'){alert('โหลดไลบรารี Excel ไม่ได้ (ต้องเชื่อมต่ออินเทอร์เน็ต) — ใช้ปุ่ม CSV แทน');return}
+ if(kind==='xlsx'){try{await lib('XLSX')}catch(e){alert('โหลดไลบรารี Excel ไม่ได้ (ต้องเชื่อมต่ออินเทอร์เน็ต) — ใช้ปุ่ม CSV แทน');return}
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(A),'รายการเบิก');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(B),'สรุปโครงข่าย');XLSX.writeFile(wb,'ใบตัดงบ_'+st+'.xlsx')}
  else{const k=Object.keys(A[0]),csv=[k,...A.map(r=>k.map(c=>r[c]))].map(l=>l.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'),
   a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='ใบตัดงบ_'+st+'.csv';document.body.appendChild(a);a.click();a.remove()}
  call('log',{act:'export',target:kind+' '+A.length+' รายการ'}).catch(()=>{})}
-async function rmW(w){if(!confirm('ลบหมายเลขงาน '+w+' ทั้งหมด? (ประวัติรายการเบิกไม่หาย)'))return;try{await call('prune',{sheet:'wbs',wbs:w,keep:[]});await load();vWbs()}catch(e){alert(e.message)}}
+async function rmW(w){if(!confirm('ลบหมายเลขงาน '+w+' ทั้งหมด? (ประวัติรายการเบิกไม่หาย)'))return;const bk=S.wbs;S.wbs=S.wbs.filter(x=>x.wbs!==w);reindex();vWbs();try{await call('prune',{sheet:'wbs',wbs:w,keep:[]})}catch(e){alert(e.message);S.wbs=bk;reindex();vWbs()}}
 const WK=['wbs','jobName','network','networkName','activity','activityName','plan','base','approvalPct','budget','costElement'];
 function fw(i){WK.forEach(k=>$('#w_'+k).value=S.wbs[i][k]||'');scrollTo(0,0)}
 async function saveW(){const r={};WK.forEach(k=>r[k]=$('#w_'+k).value.trim());r.budget=r.budget.replace(/,/g,'');r.plan=r.plan.replace(/,/g,'');r.base=r.base.replace(/,/g,'');r.manual=((r.base&&r.budget&&Math.abs(+r.budget-r2(+r.base*(num(r.approvalPct)||100)/100))>0.005)||(r.plan&&r.base&&Math.abs(+r.base-bs(r.plan,DED))>0.005))?'1':'0';
  if(!r.wbs||!/^\d{10}$/.test(r.network)||!/^\d{4}$/.test(r.activity)){$('#werr').textContent='ต้องมี WBS, เลขโครงข่าย 10 หลัก และเลขกิจกรรม 4 หลัก';return}
- r.id=r.wbs+'|'+r.network+'|'+r.activity;try{await call('save',{sheet:'wbs',row:r});await load();vWbs()}catch(e){$('#werr').textContent=e.message}}
+ r.id=r.wbs+'|'+r.network+'|'+r.activity;try{await call('save',{sheet:'wbs',row:r});const i=S.wbs.findIndex(q=>q.id===r.id);i<0?S.wbs.push(r):Object.assign(S.wbs[i],r);reindex();vWbs()}catch(e){$('#werr').textContent=e.message}}
 function vUsers(){$('#main').innerHTML=`<div class="card"><b>เพิ่ม / แก้ไขผู้ใช้งาน</b><div class="g"><div><label>รหัสพนักงาน</label><input id="u_id" inputmode="numeric"></div><div><label>ชื่อ – สกุล</label><input id="u_name"></div>
  <div><label>สิทธิ์</label><select id="u_role"><option value="user">ผู้ใช้ (ล็อกอินด้วยรหัสพนักงาน)</option><option value="admin">ผู้ดูแลระบบ (ต้องมี PIN)</option></select></div><div><label>PIN (ผู้ดูแล)</label><input id="u_pin" type="password" inputmode="numeric"></div>
  <div><label>สถานะ</label><select id="u_act"><option value="1">ใช้งาน</option><option value="0">ระงับ</option></select></div></div><p class="err" id="uerr"></p><button class="b" onclick="saveU()">บันทึก</button></div>
@@ -226,7 +252,7 @@ function vUsers(){$('#main').innerHTML=`<div class="card"><b>เพิ่ม / �
 function fu(i){const u=S.users[i];$('#u_id').value=u.empId;$('#u_name').value=u.name;$('#u_role').value=u.role;$('#u_act').value=u.active==='0'?'0':'1';scrollTo(0,0)}
 async function saveU(){const id=$('#u_id').value.trim(),r={id,empId:id,name:$('#u_name').value.trim(),role:$('#u_role').value,pin:$('#u_pin').value.trim(),active:$('#u_act').value},old=S.users.find(u=>u.empId===id);
  if(!id||!r.name){$('#uerr').textContent='กรอกรหัสพนักงานและชื่อ';return}if(r.role==='admin'&&!r.pin&&!(old&&old.role==='admin')){$('#uerr').textContent='ผู้ดูแลต้องตั้ง PIN';return}
- try{await call('save',{sheet:'users',row:r});await load();vUsers()}catch(e){$('#uerr').textContent=e.message}}
+ try{await call('save',{sheet:'users',row:r});S.users=(await call('list',{sheet:'users'})).rows;vUsers()}catch(e){$('#uerr').textContent=e.message}}
 
 /* ---- นำเข้าไฟล์ ---- */
 const KEEP=/^(ค่าแรง|ค่าควบคุมงาน|ค่าขนส่ง|ค่าเบ็ดเตล็ด)/,r2=v=>Math.round(v*100+1e-6)/100,DED=15;
@@ -238,9 +264,9 @@ function parseImp(lines){let wbs='',job='',out=[],skip=0;
  return{rows:out,skip}}
 async function pick(inp){const f=inp.files[0];if(!f)return;const box=$('#imp');box.textContent='กำลังอ่านไฟล์...';
  try{const buf=await f.arrayBuffer();let lines=[];
-  if(/\.(xlsx|xls|xlsm)$/i.test(f.name)){const wb=XLSX.read(buf,{type:'array'});wb.SheetNames.forEach(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}).forEach(r=>lines.push(r.join(' | '))))}
+  if(/\.(xlsx|xls|xlsm)$/i.test(f.name)){await lib('XLSX');const wb=XLSX.read(buf,{type:'array'});wb.SheetNames.forEach(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}).forEach(r=>lines.push(r.join(' | '))))}
   else{let t;try{t=new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){t=new TextDecoder('windows-874').decode(buf)}
-   if(/NWA/.test(t)&&t.includes('|'))lines=t.split(/\r?\n/);else{const wb=XLSX.read(t,{type:'string'});wb.SheetNames.forEach(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}).forEach(r=>lines.push(r.join(' | '))))}}
+   if(/NWA/.test(t)&&t.includes('|'))lines=t.split(/\r?\n/);else{await lib('XLSX');const wb=XLSX.read(t,{type:'string'});wb.SheetNames.forEach(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}).forEach(r=>lines.push(r.join(' | '))))}}
   S.imp=parseImp(lines);renderImp()}catch(e){box.innerHTML='<p class="err">อ่านไฟล์ไม่สำเร็จ: '+h(e.message)+'</p>'}}
 const pcts=()=>{const a=num($('#i_ap').value);return[a>0?a:100,DED]},bs=p=>r2(num(p)/1.15),calc=(p,a,d)=>r2(bs(p,d)*a/100);
 function impCalc(){if(S.imp)renderImp()}
@@ -251,8 +277,8 @@ async function doImp(){let R=S.imp.rows;const[a,d]=pcts(),w0=R.find(r=>r.wbs);le
  if(!confirm('นำเข้า '+R.length+' รายการ ของ '+ws.join(', ')+'\nอนุมัติ '+a+'%\nข้อมูลหมายเลขงานเดิมของ WBS นี้จะถูกแทนที่ (รวมงบที่เคยแก้เอง · ประวัติรายการเบิกไม่หาย)'))return;
  try{for(const w of ws){const G=R.filter(r=>r.wbs===w).map(r=>{const id=w+'|'+r.network+'|'+r.activity,ex=S.wbs.find(q=>q.id===id);
    return{id,wbs:w,jobName:(S.wbs.find(q=>q.wbs===w&&q.jobName)||{}).jobName||r.jobName,network:r.network,networkName:(S.wbs.find(q=>q.network===r.network&&q.networkName)||{}).networkName||'',activity:r.activity,activityName:r.activityName,plan:r.plan,base:String(bs(r.plan,d)),approvalPct:String(a),manual:'0',budget:String(calc(r.plan,a,d)),costElement:ex?ex.costElement||'':''}});
-   for(let i=0;i<G.length;i+=4)await call('save'+'Many',{sheet:'wbs',rows:G.slice(i,i+4)});await call('prune',{sheet:'wbs',wbs:w,keep:G.map(g=>g.id)})}
-  await load();vWbs()}catch(e){alert('นำเข้าไม่สำเร็จ: '+e.message)}}
+   for(let i=0;i<G.length;i+=4)await call('save'+'Many',{sheet:'wbs',rows:G.slice(i,i+4)});await call('prune',{sheet:'wbs',wbs:w,keep:G.map(g=>g.id)});S.wbs=S.wbs.filter(q=>q.wbs!==w).concat(G)}
+  reindex();vWbs()}catch(e){alert('นำเข้าไม่สำเร็จ: '+e.message)}}
 /* ---- แก้ไขงบประมาณ (ทุกคน) ---- */
 function eb(id){const r=S.wbs.find(w=>w.id===id);if(!r)return;const plan=r.plan||'',base=r.base||(r.plan?String(bs(r.plan,DED)):r.budget)||'',ap=r.approvalPct||'100';
  const o=document.createElement('div');o.id='dlg';o.style.cssText='position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;padding:12px;z-index:9;overflow:auto';
@@ -267,7 +293,21 @@ function ebCalc(s){const g=i=>num($('#e_'+i).value);if(s==='p')$('#e_base').valu
 async function ebSave(id){const c=i=>$('#e_'+i).value.replace(/,/g,'').trim(),p=c('plan'),b=c('base'),a=c('ap'),v=c('bud');
  if([b,v].some(x=>x===''||isNaN(+x)||+x<0)||(p!==''&&isNaN(+p))){$('#eerr').textContent='กรอกตัวเลขให้ถูกต้อง';return}
  const man=(Math.abs(+v-r2(+b*(num(a)||100)/100))>0.005||(p!==''&&Math.abs(+b-bs(p,DED))>0.005))?'1':'0';
- try{await call('editBudget',{id,row:{plan:p,base:b,approvalPct:a,budget:v,manual:man}});$('#dlg').remove();await load();go(S.tab)}catch(e){$('#eerr').textContent=e.message}}
+ try{await call('editBudget',{id,row:{plan:p,base:b,approvalPct:a,budget:v,manual:man}});$('#dlg').remove();const w=S.wbs.find(q=>q.id===id);if(w)Object.assign(w,{plan:p,base:b,approvalPct:a,budget:v,manual:man});go(S.tab)}catch(e){$('#eerr').textContent=e.message}}
+const MS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function vDash(){const f=S.f,WS=S.wbs.filter(r=>!f.w||r.wbs===f.w),R=fr(false).map(o=>o.x),RC=R,hasP=!!(f.a||f.b),UP=R.reduce((s,x)=>s+num(x.total),0),[B,U,BS]=sumOf(WS),rem=B-U,pc=B>0?U/B*100:0,W=uniq(WS.map(r=>r.wbs)),
+ kp=(t,v,s,c)=>`<div class="kpi"><span>${t}</span><b class="${c||''}">${v}</b><small>${s||'&nbsp;'}</small></div>`,
+ wl=WS.filter(r=>num(r.budget)>0).map(r=>({r,p:num(r.used)/num(r.budget)*100})).filter(o=>o.p>=90).sort((a,b)=>b.p-a.p).slice(0,8),
+ mm={};R.forEach(x=>{const k=x.year+'-'+String(x.month).padStart(2,'0');mm[k]=(mm[k]||0)+num(x.total)});
+ const ks=Object.keys(mm).sort().slice(hasP?-12:-6),mx=Math.max(1,...ks.map(k=>mm[k])),bt=TY.map(([k,n])=>[n,R.reduce((s,x)=>s+num(x[k]),0)]).filter(x=>x[1]>0),tm=Math.max(1,...bt.map(x=>x[1])),
+ hb=(l,v,m)=>`<div class="hb"><span>${h(l)}</span><div class="bar"><i style="width:${Math.max(2,v/m*100)}%"></i></div><b>${fm(v)}</b></div>`;
+ $('#main').innerHTML=fbar(false)+`<div class="kg">${kp('งบที่อนุมัติ',fm(B),BS-B>0.005?'งบประมาณ 100% '+fm(BS):'')}${kp('ใช้ไปแล้ว (สะสม)',fm(U),pc.toFixed(1)+'% ของงบ')}${kp('คงเหลือ',fm(rem),rem<0?'เกินงบ':'',rem<0?'err':'')}${(hasP||f.w)?kp('ตามตัวกรอง',fm(UP),R.length+' รายการเบิก'):kp('รายการเบิก',S.recs.length,W.length+' หมายเลขงาน')}</div>
+ <div class="card"><h3>ตามหมายเลขงาน <span class="mut">(กดเพื่อเปิดโฟลเดอร์)</span></h3>${W.map(w=>{const R=S.wbs.filter(r=>r.wbs===w),[b,u]=sumOf(R),p=b>0?u/b*100:0;
+  return`<div class="dw" onclick="S.open['w:${h(w)}']=true;go('wbs')"><div class="dt"><b>${h(w)}</b><span class="mut">${h(R[0].jobName)}</span></div>${bar(u,b)}<div class="sm"><span>งบ<b>${fm(b)}</b></span><span>ใช้ไป (${p.toFixed(0)}%)<b>${fm(u)}</b></span><span>คงเหลือ<b class="${b-u<0?'err':''}">${fm(b-u)}</b></span>${hasP?`<span>ในช่วงที่เลือก<b>${fm(RC.filter(x=>x.wbs===w).reduce((s,x)=>s+num(x.total),0))}</b></span>`:''}</div></div>`}).join('')||'<div class="mut">ยังไม่มีหมายเลขงาน — ผู้ดูแลนำเข้าได้ที่แท็บ "หมายเลขงาน"</div>'}</div>
+ ${wl.length?`<div class="card"><h3>ต้องจับตา <span class="mut">(ใช้งบ ≥ 90%)</span></h3>${wl.map(o=>`<div class="wl" onclick="S.open['w:${h(o.r.wbs)}']=S.open['n:${h(o.r.wbs+o.r.network)}']=S.open['a:${h(o.r.id)}']=true;go('wbs')"><span>${h(o.r.wbs)}<br><span class="mut">${h(o.r.network)} · ${h(o.r.activity)} ${h(o.r.activityName)}</span></span><span class="n ${o.p>100?'err':''}"><b>${o.p.toFixed(0)}%</b><br><span class="mut">เหลือ ${fm(num(o.r.budget)-num(o.r.used))}</span></span></div>`).join('')}</div>`:''}
+ ${ks.length?`<div class="card"><h3>ยอดเบิกรายเดือน</h3>${ks.map(k=>hb(MS[+k.slice(-2)-1]+' '+k.slice(2,4),mm[k],mx)).join('')}</div>`:''}
+ ${bt.length?`<div class="card"><h3>แยกตามประเภทค่าใช้จ่าย</h3>${bt.map(x=>hb(x[0],x[1],tm)).join('')}</div>`:''}
+ <div class="card"><h3>รายการล่าสุด</h3>${R.slice(0,5).map(x=>`<div class="wl" onclick="go('list')"><span><b>${h(x.payee)}</b><br><span class="mut">${h(MONTHS[x.month-1])} ${h(x.year)} · ${h(x.wbs)} · ${h(x.activity)}</span></span><span class="n"><b>${fm(x.total)}</b></span></div>`).join('')||'<div class="mut">ยังไม่มีรายการเบิก</div>'}</div>`}
 /* ---- ประวัติการใช้งาน ---- */
 const AL={login:'เข้าสู่ระบบ',login_fail:'เข้าสู่ระบบไม่สำเร็จ',create:'เพิ่มรายการ',update:'แก้ไขรายการ',delete:'ลบ',import:'นำเข้าไฟล์',prune_wbs:'ลบหมายเลขงานเดิม',word:'ดาวน์โหลด Word',export:'ส่งออกข้อมูล',edit_budget:'แก้ไขงบประมาณ',edit_wbs_name:'แก้ไขชื่อหมายเลขงาน',create_wbs:'เพิ่มหมายเลขงาน',update_wbs:'แก้ไขหมายเลขงาน',create_users:'เพิ่มผู้ใช้',update_users:'แก้ไขผู้ใช้',update_:'แก้ไข',create_:'เพิ่ม'};
 function vLogs(){$('#main').innerHTML=`<div class="card w"><b>ประวัติการเข้าใช้งานและบันทึกข้อมูล (ล่าสุด 300 รายการ)</b><table><tr><th>เวลา</th><th>ผู้ใช้</th><th>การกระทำ</th><th>รายละเอียด</th></tr>${S.logs.map(l=>`<tr><td class="mut">${h(new Date(l.ts).toLocaleString('th-TH'))}</td><td>${h(l.empId)}<br><span class="mut">${h(l.name)}</span></td><td>${h(AL[l.action]||l.action)}</td><td class="mut" title="${h(l.detail)}">${h(l.target)}<br>${h((l.detail||'').slice(0,90))}</td></tr>`).join('')}</table></div>`}
