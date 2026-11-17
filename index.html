@@ -123,7 +123,7 @@ function jsonp(p){return new Promise((ok,no)=>{const cb='cb'+Date.now()+Math.flo
  window[cb]=r=>{delete window[cb];s.remove();ok(r)};s.onerror=()=>{s.remove();no(new Error('เชื่อมต่อฐานข้อมูลไม่ได้'))};
  s.src=API+'?'+new URLSearchParams({...p,callback:cb});document.body.appendChild(s)})}
 async function call(a,x={}){const au={id:S.user?S.user.empId:$('#lid').value.trim(),pin:S.user?S.pin:$('#lpin').value.trim()};
- if(!API)return local(a,au,x);const q={action:a,id:au.id,pin:au.pin};for(const k in x)q[k]=typeof x[k]==='object'?JSON.stringify(x[k]):x[k];
+ if(!API)return local(a,au,x);const q={action:a,id:au.id,pin:au.pin};for(const k in x)q[k==='id'?'rid':k]=typeof x[k]==='object'?JSON.stringify(x[k]):x[k];
  const r=await jsonp(q);if(!r.ok)throw new Error(r.err||'ผิดพลาด');return r}
 /* ---- เข้าสู่ระบบ ---- */
 async function login(){$('#lerr').textContent='';try{const r=await call('login');S.user=r.me;S.pin=$('#lpin').value.trim();$('#login').hidden=true;$('#app').hidden=false;
