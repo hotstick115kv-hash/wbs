@@ -46,7 +46,7 @@ details.fd>details,details.fd>.rl{margin-left:8px}svg.di{width:14px;height:14px;
 <label>รหัสพนักงาน</label><input id="lid" inputmode="numeric" autocomplete="username">
 <label>PIN (เฉพาะผู้ดูแลระบบ)</label><input id="lpin" type="password" inputmode="numeric">
 <p class="err" id="lerr"></p><button class="b" onclick="login()">เข้าสู่ระบบ</button>
-<details style="margin-top:14px"><summary class="mut">ตั้งค่าฐานข้อมูล Google Sheets</summary>
+<details id="cfg" style="margin-top:14px"><summary class="mut">ตั้งค่าฐานข้อมูล Google Sheets</summary>
 <label>Apps Script Web App URL (เว้นว่าง = โหมดทดลองในเครื่อง)</label><input id="api" placeholder="https://script.google.com/macros/s/.../exec">
 <button class="s" style="margin-top:6px" onclick="saveApi()">บันทึก URL</button></details></div></div>
 <div id="app" hidden><header><div><b>ใบตัดงบหมายเลขงาน</b><br><small id="who"></small></div><button class="s" onclick="logout()">ออก</button></header>
@@ -88,9 +88,12 @@ function fillDoc(xml,d){
 const $=s=>document.querySelector(s),h=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const TY=[['wage','ค่าจ้าง'],['ot','ค่าล่วงเวลา'],['per','ค่าเบี้ยเลี้ยง'],['lodge','ค่าที่พักแรม'],['veh','ค่าพาหนะ'],['other','ค่าอื่นๆ']];
 const num=v=>parseFloat(String(v||'').replace(/,/g,''))||0,fm=v=>num(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-let API='',mem=null,S={user:null,pin:'',open:{},wbs:[],users:[],recs:[],tab:'new',ed:null};
-try{API=localStorage.getItem('api')||''}catch(e){}
-$('#api').value=API;$('#mode').textContent=API?'เชื่อมต่อฐานข้อมูล Google Sheets':'โหมดทดลอง: ข้อมูลเก็บในเครื่องนี้เท่านั้น';
+/* ★ วาง URL ของ Web App (Apps Script) ระหว่างเครื่องหมายคำพูดด้านล่าง เช่น 'https://script.google.com/macros/s/xxxx/exec'
+   ถ้าใส่แล้ว ทุกคนใช้ฐานข้อมูล Google Sheets โดยอัตโนมัติ และหน้าตั้งค่า URL จะถูกซ่อน · ถ้าเว้นว่าง = โหมดทดลองในเครื่อง */
+const API_URL='https://script.google.com/macros/s/AKfycbyTa-OGVCgOzEKXsKx7hHFK_wzJT-nepbylJQfA8mAyePJIKcTy64V91LObHNkI16cG/exec';
+let API=API_URL,mem=null,S={user:null,pin:'',open:{},wbs:[],users:[],recs:[],tab:'new',ed:null};
+if(!API_URL)try{API=localStorage.getItem('api')||''}catch(e){}
+$('#api').value=API;if(API_URL)$('#cfg').hidden=true;$('#mode').textContent=API_URL?'':(API?'เชื่อมต่อฐานข้อมูล Google Sheets':'โหมดทดลอง: ข้อมูลเก็บในเครื่องนี้เท่านั้น');
 function saveApi(){API=$('#api').value.trim();try{localStorage.setItem('api',API)}catch(e){}$('#mode').textContent=API?'เชื่อมต่อฐานข้อมูล Google Sheets':'โหมดทดลอง: ข้อมูลเก็บในเครื่องนี้เท่านั้น'}
 /* ---- โหมดทดลอง (จำลองฝั่งเซิร์ฟเวอร์ในเครื่อง) ---- */
 const SEED=[["7001264054","0020","ค่าแรง","57184.90"],["7001264054","0030","ค่าควบคุมงาน","17155.70"],["7001264054","0040","ค่าขนส่ง","13341.15"],["7001264054","0050","ค่าเบ็ดเตล็ด","17724.95"],["7001264056","0030","ค่าแรง","32883.10"],["7001264056","0040","ค่าควบคุมงาน","9864.70"],["7001264056","0050","ค่าขนส่ง","6774.65"],["7001264056","0060","ค่าเบ็ดเตล็ด","9585.25"],["7001264057","0020","ค่าแรง","16181.65"],["7001264057","0030","ค่าควบคุมงาน","4854.15"],["7001264057","0040","ค่าขนส่ง","1415.65"],["7001264057","0050","ค่าเบ็ดเตล็ด","5663.75"],["7001264060","0030","ค่าแรง","5677.55"],["7001264060","0040","ค่าควบคุมงาน","1703.15"],["7001264060","0050","ค่าขนส่ง","6599.85"],["7001264060","0060","ค่าเบ็ดเตล็ด","7297.90"]],NN={'7001264054':'33 kV - แผนกแรงสูง','7001264056':'33 kV - แผนกแรงต่ำ','7001264057':'33 kV - แผนกรื้อถอนแรงต่ำ','7001264060':'33 kV - แผนกหม้อแปลง'},SUP='นายศุภชัย จันทร์ครุฑ';
